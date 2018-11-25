@@ -20,6 +20,7 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -38,12 +39,14 @@ public class MainActivity extends AppCompatActivity{
 
     private ContatoDAO cDAO ;
     private RecyclerView recyclerView;
-
+    private MenuItem favoritos;
     private List<Contato> contatos = new ArrayList<>();
     private TextView empty;
 
     private ContatoAdapter adapter;
     private SearchView searchView;
+
+    private String query = null;
 
     private FloatingActionButton fab;
 
@@ -52,7 +55,7 @@ public class MainActivity extends AppCompatActivity{
         if (!searchView.isIconified()) {
 
             searchView.onActionViewCollapsed();
-            updateUI(null);
+            updateUI(null ,favoritos.isChecked());
         } else {
             super.onBackPressed();
         }
@@ -69,8 +72,8 @@ public class MainActivity extends AppCompatActivity{
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
             searchView.clearFocus();
-            updateUI(query);
-
+            this.query = query;
+            updateUI(query, favoritos.isChecked());
         }
     }
 
@@ -109,28 +112,41 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
-        updateUI(null);
+        updateUI(null,false);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        final SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
         searchView = (SearchView) menu.findItem(R.id.pesqContato).getActionView();
+        favoritos = menu.findItem(R.id.favoritos);
+        favoritos.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (favoritos.isChecked()) {
+                    favoritos.setChecked(false);
+                } else {
+                    favoritos.setChecked(true);
+                }
+                updateUI(query, favoritos.isChecked());
+                return true;
+            }
+        });
 
         ImageView closeButton = (ImageView)searchView.findViewById(R.id.search_close_btn);
-
-
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText et = (EditText)findViewById(R.id.search_src_text);
+                EditText et = findViewById(R.id.search_src_text);
                 if (et.getText().toString().isEmpty())
                     searchView.onActionViewCollapsed();
 
                 searchView.setQuery("", false);
-                updateUI(null);
+                query = null;
+                updateUI(null, favoritos.isChecked());
             }
         });
 
@@ -148,7 +164,7 @@ public class MainActivity extends AppCompatActivity{
         if (requestCode == 1)
             if (resultCode == RESULT_OK) {
                 showSnackBar(getResources().getString(R.string.contato_adicionado));
-                updateUI(null);
+                updateUI(null,favoritos.isChecked());
             }
 
 
@@ -159,7 +175,7 @@ public class MainActivity extends AppCompatActivity{
             if (resultCode == 3)
                 showSnackBar(getResources().getString(R.string.contato_apagado));
 
-            updateUI(null);
+            updateUI(null,favoritos.isChecked());
         }
     }
 
@@ -172,26 +188,26 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-    private void updateUI(String nomeContato)
-    {
+    private void updateUI(String nomeContato, boolean favoritos) {
 
         contatos.clear();
 
-        if (nomeContato==null) {
+        if (nomeContato == null && !favoritos) {
             contatos.addAll(cDAO.buscaTodosContatos());
             empty.setText(getResources().getString(R.string.lista_vazia));
-            fab.setVisibility(View.VISIBLE);
-        }
-        else {
-            contatos.addAll(cDAO.buscaContato(nomeContato));
+            fab.show();
+
+        } else {
+            contatos.addAll(cDAO.buscaContato(nomeContato, favoritos));
             empty.setText(getResources().getString(R.string.contato_nao_encontrado));
-            fab.setVisibility(View.GONE);
+            fab.hide();
+
 
         }
 
         recyclerView.getAdapter().notifyDataSetChanged();
 
-        if (recyclerView.getAdapter().getItemCount()==0)
+        if (recyclerView.getAdapter().getItemCount() == 0)
             empty.setVisibility(View.VISIBLE);
         else
             empty.setVisibility(View.GONE);
@@ -199,15 +215,27 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void setupRecyclerView() {
-
-
         adapter.setClickListener(new ContatoAdapter.ItemClickListener() {
             @Override
-            public void onItemClick(int position) {
-                final Contato contato = contatos.get(position);
-                Intent i = new Intent(getApplicationContext(), DetalheActivity.class);
-                i.putExtra("contato", contato);
-                startActivityForResult(i, 2);
+            public void onItemClick(int position, View view) {
+                if (view.getId() == R.id.ratingBar) {
+                    Contato c = contatos.get(position);
+                    if (c.getRating() == 0.0) {
+                        c.setRating(1);
+                        /*  ib.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), android.R.drawable.btn_star_big_on));*/
+                        cDAO.salvaContato(c);
+
+                    } else {
+                        c.setRating(0);
+                        /* ib.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), android.R.drawable.btn_star_big_off));*/
+                        cDAO.salvaContato(c);
+                    }
+                } else {
+                    final Contato contato = contatos.get(position);
+                    Intent i = new Intent(getApplicationContext(), DetalheActivity.class);
+                    i.putExtra("contato", contato);
+                    startActivityForResult(i, 2);
+                }
             }
         });
 
@@ -224,9 +252,8 @@ public class MainActivity extends AppCompatActivity{
                     Contato contato = contatos.get(viewHolder.getAdapterPosition());
                     cDAO.apagaContato(contato);
                     contatos.remove(viewHolder.getAdapterPosition());
-                    recyclerView.getAdapter().notifyDataSetChanged();
+                    recyclerView.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
                     showSnackBar(getResources().getString(R.string.contato_apagado));
-                    updateUI(null);
                 }
             }
 
@@ -251,9 +278,6 @@ public class MainActivity extends AppCompatActivity{
                 }
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
             }
-
-
-
         };
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(recyclerView);

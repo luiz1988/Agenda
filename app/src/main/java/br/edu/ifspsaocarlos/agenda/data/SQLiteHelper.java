@@ -13,7 +13,7 @@ class SQLiteHelper extends SQLiteOpenHelper {
     static final String KEY_DATA = "data";
     static final String KEY_EMAIL = "email";
     static final String KEY_FAVORITO = "favorito";
-    private static final int DATABASE_VERSION = 11;
+    private static final int DATABASE_VERSION = 15;
     private static final String DATABASE_CREATE = "CREATE TABLE "+ DATABASE_TABLE +" (" +
             KEY_ID  +  " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             KEY_NAME + " TEXT NOT NULL, " +
@@ -27,6 +27,8 @@ class SQLiteHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    /*public static final String DATABASE_DROP_TABLE = "DROP TABLE IF EXISTS " + DATABASE_TABLE;*/
+
     @Override
     public void onCreate(SQLiteDatabase database) {
         database.execSQL(DATABASE_CREATE);
@@ -34,13 +36,27 @@ class SQLiteHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-
-      /*  if (newVersion > oldVersion) {
+        if (oldVersion == 2) {
+            database.execSQL("ALTER TABLE contatos ADD COLUMN favorito REAL");
+        }
+        if (oldVersion == 3) {
+            database.execSQL("ALTER TABLE contatos ADD COLUMN casa STRING");
+        }
+        if (oldVersion == 4) {
             database.execSQL("ALTER TABLE contatos ADD COLUMN data STRING");
-        }*/
-//        String sql = "DROP TABLE IF EXISTS contatos ";
-//        database.execSQL(sql);
-//        onCreate(database);
+        }
+    }
+
+    public void onDowngrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+        if (oldVersion == 2) {
+            database.execSQL("ALTER TABLE contatos ADD COLUMN favorito REAL");
+        }
+        if (oldVersion == 3) {
+            database.execSQL("ALTER TABLE contatos ADD COLUMN casa STRING");
+        }
+        if (oldVersion == 4) {
+            database.execSQL("ALTER TABLE contatos ADD COLUMN data STRING");
+        }
     }
 }
 

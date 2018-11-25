@@ -15,6 +15,8 @@
     <string name="contato_adicionado">Contato adicionado</string>
     <string name="contato_alterado">Informações do contato alteradas</string>
     <string name="contato_apagado">Contato removido</string>
+    <string name="apenas_favoritos">Apenas Favoritos</string>
+    <string name="favoritos">Favoritos</string>
 </resources>
 
 

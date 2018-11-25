@@ -41,8 +41,6 @@ public class ContatoDAO {
             contato.setEmail(cursor.getString(5));
             contato.setRating(cursor.getFloat(6));
             contatos.add(contato);
-
-
         }
         cursor.close();
 
@@ -51,7 +49,7 @@ public class ContatoDAO {
         return contatos;
     }
 
-    public  List<Contato> buscaContato(String nome)
+    public  List<Contato> buscaContato(String nome,boolean favoritos)
     {
         database=dbHelper.getReadableDatabase();
         List<Contato> contatos = new ArrayList<>();
@@ -59,12 +57,22 @@ public class ContatoDAO {
         Cursor cursor;
 
         String[] cols=new String[] {SQLiteHelper.KEY_ID,SQLiteHelper.KEY_NAME, SQLiteHelper.KEY_FONE,SQLiteHelper.KEY_FONECASA,SQLiteHelper.KEY_DATA, SQLiteHelper.KEY_EMAIL , SQLiteHelper.KEY_FAVORITO};
-        String where=SQLiteHelper.KEY_NAME + " like ? OR " + SQLiteHelper.KEY_EMAIL + " like ?";
-        String[] argWhere=new String[]{"%"+nome+"%","%"+nome+"%"};
+        String where = "";
+        String argWhere[] = new String[0];
 
+        if (nome != null) {
+            where=SQLiteHelper.KEY_NAME + " like ? OR " + SQLiteHelper.KEY_EMAIL + " like ?";
+            argWhere=new String[]{"%"+nome+"%","%"+nome+"%"};
+        }
+        if (favoritos && nome == null) {
+            where = where + SQLiteHelper.KEY_FAVORITO + " = 1";
+        }else if (favoritos && nome != null) {
+            where = where + " AND " + SQLiteHelper.KEY_FAVORITO + " = ?";
+            argWhere = new String[]{nome + "%", Integer.toString(1)};
+        }
 
-        cursor = database.query(SQLiteHelper.DATABASE_TABLE, cols, where , argWhere,
-                null, null,SQLiteHelper.KEY_NAME);
+        cursor = database.query(SQLiteHelper.DATABASE_TABLE, cols, where, argWhere,
+                null, null, SQLiteHelper.KEY_NAME);
 
 
         while (cursor.moveToNext())
@@ -78,8 +86,6 @@ public class ContatoDAO {
             contato.setEmail(cursor.getString(5));
             contato.setRating(cursor.getFloat(6));
             contatos.add(contato);
-
-
         }
         cursor.close();
 
@@ -105,8 +111,6 @@ public class ContatoDAO {
 
         database.close();
     }
-
-
 
     public void apagaContato(Contato c)
     {

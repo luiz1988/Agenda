@@ -7,5 +7,13 @@
         android:title="@string/nome_do_contato"
         app:actionViewClass="android.support.v7.widget.SearchView"
         />
+
+    <item
+        android:id="@+id/favoritos"
+        style="?android:attr/starStyle"
+        android:checkable="true"
+        android:title="@string/apenas_favoritos"
+        android:titleCondensed="@string/favoritos"
+        app:actionViewClass="android.widget.CheckBox" />
 </menu>
 

@@ -55,28 +55,27 @@ public class ContatoAdapter extends RecyclerView.Adapter<ContatoAdapter.ContatoV
 
     public  class ContatoViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         final TextView nome;
-        RatingBar favorito = new RatingBar(context);
+        final RatingBar favorito;
 
         ContatoViewHolder(View view) {
             super(view);
-            nome = (TextView)view.findViewById(R.id.nome);
-            favorito =(RatingBar)view.findViewById(R.id.ratingBar);
+            nome = view.findViewById(R.id.nome);
+            favorito = view.findViewById(R.id.ratingBar);
             view.setOnClickListener(this);
+            favorito.setOnClickListener(this);
+            /*favorito.setOnTouchListener(this);*/
         }
 
         @Override
         public void onClick(View view) {
-
             if (clickListener != null)
-                clickListener.onItemClick(getAdapterPosition());
+                clickListener.onItemClick(getAdapterPosition(), view);
         }
     }
 
-
     public interface ItemClickListener {
-        void onItemClick(int position);
+        void onItemClick(int position, View view);
     }
-
 }
 
 
